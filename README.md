@@ -1,4 +1,3 @@
-````markdown
 # 🚀 Simple Blazor App
 
 Project ini dibangun menggunakan **.NET 9** dengan framework **Blazor**.  
@@ -17,11 +16,11 @@ Pastikan sudah terpasang di komputer kamu:
 ## ⚙️ Cara Menjalankan Project
 
 1. **Clone repository:**
+
    ```bash
    git clone https://github.com/<username>/<repo-name>.git
    cd <repo-name>
    ```
-````
 
 2. **Restore dependencies:**
 
