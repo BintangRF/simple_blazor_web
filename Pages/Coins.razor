@@ -1,0 +1,86 @@
+@page "/coins"
+@inject HttpClient Http
+
+<PageTitle>Coins</PageTitle>
+
+<div class="container mt-5" style="max-width:600px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="text-center">    
+                <h2 class="card-title mb-4">Crypto Prices</h2>
+                <button class="btn btn-primary mb-3" @onclick="LoadCrypto">Muat Harga</button>
+            </div>
+
+            @if (loading)
+            {
+                <div class="text-center">
+                    <div class="spinner-border text-primary"></div>
+                    <p>Memuat data...</p>
+                </div>
+            }
+            else if (coins != null)
+            {
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>Harga (USD)</th>
+                            <th>Perubahan 24h</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var coin in coins)
+                        {
+                            <tr>
+                                <td>
+                                    <img src="@coin.image" width="25" class="me-2" />
+                                    @coin.name (@coin.symbol.ToUpper())
+                                </td>
+                                <td>$@coin.current_price</td>
+                                <td class="@(coin.price_change_percentage_24h >= 0 ? "text-success" : "text-danger")">
+                                    @coin.price_change_percentage_24h.ToString("0.00")%
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else if (errorMessage != null)
+            {
+                <div class="alert alert-danger mt-3">@errorMessage</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool loading;
+    private List<Coin>? coins;
+    private string? errorMessage;
+
+    private async Task LoadCrypto() {
+        loading = true;
+        errorMessage = null;
+        coins = null;
+
+        try {
+            var url = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&per_page=10&page=1";
+            coins = await Http.GetFromJsonAsync<List<Coin>>(url); 
+        } catch (HttpRequestException) {
+            errorMessage = "Gagal mengambil data harga koin.";
+        } finally {
+            loading = false;
+        }
+    }
+
+    public class Coin {
+        public string id { get; set; } = "";
+        public string symbol { get; set; } = "";
+        public string name { get; set; } = "";
+        public string image { get; set; } = "";
+        public double current_price { get; set; }
+        public double price_change_percentage_24h { get; set; }
+
+    }
+
+}

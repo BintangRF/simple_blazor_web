@@ -1,0 +1,87 @@
+@page "/recipes"
+@inject HttpClient Http
+
+<PageTitle>Recipes</PageTitle>
+
+<div class="container mt-5" style="max-width:700px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4">Recipe Finder</h2>
+            <form @onsubmit="SearchRecipes" class="input-group mb-3">
+                <input @bind="query" class="form-control" placeholder="Cari resep (misal: chicken, beef...)" />
+                <button class="btn btn-success" type="submit" @onclick="SearchRecipes">Cari</button>
+            </form>
+
+            @if (loading)
+            {
+                <div class="text-center">
+                    <div class="spinner-border text-success" role="status"></div>
+                    <p>Memuat data resep...</p>
+                </div>
+            }
+            else if (meals != null)
+            {
+                <div class="list-group">
+                    @foreach (var meal in meals)
+                    {
+                        <a href="@meal.strSource" class="list-group-item list-group-item-action" target="_blank">
+                            <div class="d-flex align-items-center">
+                                <img src="@meal.strMealThumb" width="60" class="rounded me-3" />
+                                <div>
+                                    <h5 class="mb-1">@meal.strMeal</h5>
+                                    <small>@meal.strArea | @meal.strCategory</small>
+                                </div>
+                            </div>
+                        </a>
+                    }
+                </div>
+            }
+            else if (errorMessage != null)
+            {
+                <div class="alert alert-danger mt-3">@errorMessage</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? query;
+    private bool loading;
+    private List<Meal>? meals;
+    private string? errorMessage;
+
+    private async Task SearchRecipes(){
+        if (string.IsNullOrWhiteSpace(query)) {
+            errorMessage = "Silahkan masukkan kata kunci resep.";
+            meals = null;
+            return;
+        }
+
+        loading = true;
+        errorMessage = null;
+        meals = null;
+
+        try {
+            var url = $"https://www.themealdb.com/api/json/v1/1/search.php?s={query}";
+            var res = await Http.GetFromJsonAsync<MealResponse>(url);
+            meals = res?.meals;
+            if (meals == null) errorMessage = "Resep tidak ditemukan.";
+        } catch (HttpRequestException) {
+            errorMessage = "Terjadi kesalahan saat mengambil data resep.";
+        } finally {
+            loading = false;
+        }
+    }
+
+    public class MealResponse {
+        public List<Meal>? meals { get; set;}
+    }
+
+    public class Meal {
+        public string strMeal { get; set; } = "";
+        public string strCategory { get; set; } = "";
+        public string strArea { get; set; } = "";
+        public string strMealThumb { get; set; } = "";
+        public string strSource { get; set; } = ""; 
+    }
+}

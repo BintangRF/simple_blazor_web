@@ -1,0 +1,117 @@
+﻿@page "/weather"
+@inject HttpClient Http
+
+<PageTitle>Weather</PageTitle>
+
+<div class="container mt-5" style="max-width: 600px;">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-3">Weather Finder</h2>
+            <p class="text-muted text-center mb-4">
+                Masukkan nama kota untuk mendapatkan pembaruan cuaca terbaru.
+            </p>
+
+            <form @onsubmit="GetWeather" class="input-group mb-3">
+                <input @bind="location" @bind:event="oninput" class="form-control" placeholder="Masukkan nama kota..." />
+                <button class="btn btn-primary" type="submit" @onclick="GetWeather">Cari</button>
+            </form>
+
+            @if (loading)
+            {
+                <div class="text-center mt-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Memuat data cuaca...</p>
+                </div>
+            }
+            else if (weatherData != null)
+            {
+                <div class="card mt-3 border-0 bg-light">
+                    <div class="card-body text-center">
+                        <h3 class="mb-2">Cuaca di <span class="text-primary">@weatherData.Name</span></h3>
+                        <p class="fs-5 text-capitalize">@weatherData.Weather[0].Description</p>
+
+                        <hr />
+
+                        <div class="row text-center">
+                            <div class="col">
+                                <p class="mb-0 fw-semibold">Suhu</p>
+                                <p class="fs-5">@weatherData.Main.Temp °C</p>
+                            </div>
+                            <div class="col">
+                                <p class="mb-0 fw-semibold">Kelembapan</p>
+                                <p class="fs-5">@weatherData.Main.Humidity %</p>
+                            </div>
+                            <div class="col">
+                                <p class="mb-0 fw-semibold">Angin</p>
+                                <p class="fs-5">@weatherData.Wind.Speed m/s</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (errorMessage != null)
+            {
+                <div class="alert alert-danger mt-3" role="alert">
+                    @errorMessage
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? location;
+    private bool loading;
+    private WeatherResponse? weatherData;
+    private string? errorMessage;
+
+    private async Task GetWeather()
+    {
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            errorMessage = "Masukkan nama kota terlebih dahulu.";
+            weatherData = null;
+            return;
+        }
+
+        loading = true;
+        errorMessage = null;
+        weatherData = null;
+
+        try {
+            var apiKey = "a914efca4b7bcd91d944c4b435f25b22"; // ganti dengan API key kamu
+            var url = $"https://api.openweathermap.org/data/2.5/weather?q={location}&appid={apiKey}&units=metric&lang=id";
+            weatherData = await Http.GetFromJsonAsync<WeatherResponse>(url);
+        } catch (HttpRequestException) {
+            errorMessage = "Gagal mengambil data cuaca. Periksa nama kota dan coba lagi.";
+        } finally {
+            loading = false;
+        }
+    }
+
+    public class WeatherResponse
+    {
+        public MainInfo Main { get; set; } = new();
+        public WindInfo Wind { get; set; } = new();
+        public WeatherDescription[] Weather { get; set; } = Array.Empty<WeatherDescription>();
+        public string Name { get; set; } = "";
+    }
+
+    public class MainInfo
+    {
+        public double Temp { get; set; }
+        public int Humidity { get; set; }
+    }
+
+    public class WindInfo
+    {
+        public double Speed { get; set; }
+    }
+
+    public class WeatherDescription
+    {
+        public string Description { get; set; } = "";
+    }
+}
